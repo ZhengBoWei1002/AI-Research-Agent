@@ -1,0 +1,20 @@
+[app]
+name = "AI Research Agent"
+env = "local"
+debug = true
+host = "0.0.0.0"
+port = 8000
+log_level = "INFO"
+
+[llm]
+api_base = "https://api.openai.com/v1"
+model = "gpt-4o-mini"
+embedding_model = "text-embedding-3-small"
+
+[storage]
+sqlite_path = "./data/sqlite/app.db"
+chroma_persist_directory = "./data/chroma"
+
+[research]
+max_iterations = 3
+timeout_seconds = 180
