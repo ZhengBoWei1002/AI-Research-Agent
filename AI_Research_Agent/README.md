@@ -118,6 +118,23 @@ flowchart TD
 Current code keeps the graph implementation intentionally simple while the
 documentation defines the target iterative workflow.
 
+## Current Milestone Workflow
+
+This round implements the first runnable orchestration slice:
+
+```mermaid
+flowchart LR
+    A([START]) --> B[Supervisor]
+    B --> C[Planner]
+    C --> D([END])
+```
+
+The current workflow is intentionally bounded:
+
+- `Supervisor` receives the user task and initializes the planning handoff
+- `Planner` decomposes the task into multiple `ResearchTask` items
+- no `Researcher` execution is implemented in this round
+
 ## Tech Stack
 
 - Python 3.12
@@ -151,10 +168,16 @@ ai-research-agent/
 │       ├── agents/
 │       │   ├── base.py
 │       │   ├── memory_manager.py
-│       │   ├── planner.py
+│       │   ├── planner/
+│       │   │   ├── agent.py
+│       │   │   ├── prompt.py
+│       │   │   └── state.py
 │       │   ├── researcher.py
 │       │   ├── reviewer.py
-│       │   ├── supervisor.py
+│       │   ├── supervisor/
+│       │   │   ├── agent.py
+│       │   │   ├── prompt.py
+│       │   │   └── state.py
 │       │   └── writer.py
 │       ├── api/
 │       │   └── routers/
@@ -176,6 +199,8 @@ ai-research-agent/
 │       │   └── system.py
 │       └── app.py
 ├── tests/
+│   ├── agents/
+│   └── graph/
 ├── .env.example
 ├── .gitignore
 ├── Dockerfile
@@ -229,6 +254,22 @@ Logging is initialized from `configs/logging.yaml` and wrapped with
 `structlog` so the project can evolve from local plain logs to structured JSON
 logging for observability platforms.
 
+## Supervisor Design
+
+- `Supervisor` is the workflow entry node in the current implementation
+- it normalizes whitespace in the incoming user task
+- it writes `normalized_query` and `supervisor_notes` into shared state
+- it transitions workflow status from `initialized` to `planning`
+- it does not perform planning or research itself
+
+## Planner Design
+
+- `Planner` consumes the normalized task prepared by `Supervisor`
+- it generates deterministic typed `ResearchTask` objects
+- it writes both `tasks` and a string `plan` projection into shared state
+- it marks the workflow as `completed` for the current milestone
+- it deliberately stops before any research execution logic
+
 ## Local Development
 
 ### 1. Create environment
@@ -260,6 +301,27 @@ After startup, visit:
 - `http://localhost:8000/docs`
 - `http://localhost:8000/api/v1/health`
 
+## Project Running
+
+Run the implemented workflow directly from Python:
+
+```bash
+python -c "from ai_research_agent.graph.workflow import run_research_workflow; result = run_research_workflow('Design an enterprise AI research plan'); print(result.model_dump_json(indent=2))" 
+```
+
+Run tests for the implemented milestone:
+
+```bash
+pytest -q
+```
+
+The current runnable scope is:
+
+- API startup and health check
+- `Supervisor` node execution
+- `Planner` node execution
+- `START → Supervisor → Planner → END` workflow invocation
+
 ## Docker
 
 Build and run:
@@ -287,6 +349,45 @@ That makes it suitable for:
 - GitHub portfolio review
 - iterative feature expansion
 - system design discussion in interviews
+
+## Example Input Output
+
+Example input:
+
+```text
+Design an enterprise AI research plan for multi-agent systems
+```
+
+Example workflow output:
+
+```json
+{
+  "session_id": "session-001",
+  "user_query": "Design an enterprise AI research plan for multi-agent systems",
+  "normalized_query": "Design an enterprise AI research plan for multi-agent systems",
+  "supervisor_notes": [
+    "Supervisor accepted the incoming task.",
+    "Workflow routed to Planner."
+  ],
+  "tasks": [
+    {
+      "task_id": "task-1",
+      "title": "Clarify Objective",
+      "objective": "Define the scope and expected outcome for: Design an enterprise AI research plan for multi-agent systems",
+      "rationale": "A clear objective prevents downstream ambiguity.",
+      "status": "planned"
+    }
+  ],
+  "plan": [
+    "Define the scope and expected outcome for: Design an enterprise AI research plan for multi-agent systems"
+  ],
+  "planning_summary": "Planner created a deterministic three-step research backlog for the downstream Researcher.",
+  "status": "completed"
+}
+```
+
+The real runtime output currently contains three planned tasks. The example is
+shortened here for readability.
 
 ## Future Development Plan
 
