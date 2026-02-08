@@ -3,7 +3,7 @@
 import logging
 import logging.config
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import structlog
 import yaml
@@ -12,7 +12,7 @@ import yaml
 DEFAULT_LOGGING_CONFIG = Path("configs/logging.yaml")
 
 
-def configure_logging(config_path: Path | None = None) -> None:
+def configure_logging(config_path: Optional[Path] = None) -> None:
     """Configure stdlib logging and structlog."""
 
     resolved_path = config_path or DEFAULT_LOGGING_CONFIG

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from ai_research_agent.graph.state import ResearchState
 
 
-@dataclass(slots=True)
+@dataclass
 class AgentMetadata:
     """Common metadata describing an agent role."""
 

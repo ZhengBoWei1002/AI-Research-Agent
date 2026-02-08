@@ -15,6 +15,19 @@ flowchart TD
     H --> I([END])
 ```
 
+## Implemented Workflow In Current Milestone
+
+```mermaid
+flowchart LR
+    A([START]) --> B[Supervisor]
+    B --> C[Planner]
+    C --> D([END])
+```
+
+This is the workflow that is actually implemented in code for the current
+iteration. It intentionally stops after task planning and does not execute any
+research logic yet.
+
 ## Node Responsibilities
 
 - `MemoryManager`: load prior context, checkpoints, and retrieval hints

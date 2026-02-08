@@ -5,12 +5,16 @@
 - Owns top-level orchestration policy
 - Controls node routing, retry budget, timeout, and failure handling
 - Enforces guardrails such as output contracts and execution boundaries
+- Current implementation normalizes the incoming task and transitions the graph
+  into the planning phase
 
 ## Planner
 
 - Parses the user objective into a structured research plan
 - Defines subtasks, dependencies, and completion criteria
 - Produces the plan that downstream agents execute
+- Current implementation emits deterministic `ResearchTask` items without
+  executing any downstream research
 
 ## Researcher
 
