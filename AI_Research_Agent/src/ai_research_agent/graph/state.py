@@ -5,8 +5,8 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-WorkflowStatus = Literal["initialized", "planning", "completed", "failed"]
-TaskStatus = Literal["pending", "planned"]
+WorkflowStatus = Literal["initialized", "planning", "researching", "completed", "failed"]
+TaskStatus = Literal["pending", "planned", "researched"]
 
 
 class ResearchTask(BaseModel):
@@ -19,6 +19,26 @@ class ResearchTask(BaseModel):
     status: TaskStatus = Field(default="pending")
 
 
+class ToolCallRecord(BaseModel):
+    """Trace record for a tool invocation."""
+
+    tool_name: str
+    query: str
+    success: bool
+    result_count: int = Field(default=0)
+
+
+class Evidence(BaseModel):
+    """Evidence item aggregated by the researcher."""
+
+    evidence_id: str
+    task_id: str
+    source: str
+    title: str
+    snippet: str
+    url: str
+
+
 class ResearchState(BaseModel):
     """Serializable state passed between graph nodes."""
 
@@ -29,6 +49,9 @@ class ResearchState(BaseModel):
     tasks: list[ResearchTask] = Field(default_factory=list)
     plan: list[str] = Field(default_factory=list)
     planning_summary: str = Field(default="")
+    evidence: list[Evidence] = Field(default_factory=list)
+    tool_calls: list[ToolCallRecord] = Field(default_factory=list)
+    researcher_summary: str = Field(default="")
     status: WorkflowStatus = Field(default="initialized")
 
 
