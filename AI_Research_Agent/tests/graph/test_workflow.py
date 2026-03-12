@@ -18,3 +18,6 @@ def test_run_research_workflow_returns_planned_tasks() -> None:
     assert result.normalized_query == "Create a research plan for enterprise AI agents"
     assert len(result.tasks) == 3
     assert result.tasks[0].title == "Clarify Objective"
+    assert len(result.evidence) >= 3
+    assert len(result.tool_calls) >= 3
+    assert "Researcher aggregated" in result.researcher_summary

@@ -13,7 +13,7 @@ def test_planner_agent_creates_research_tasks() -> None:
 
     result = agent.run(state)
 
-    assert result.status == "completed"
+    assert result.status == "researching"
     assert len(result.tasks) == 3
     assert len(result.plan) == 3
     assert all(task.status == "planned" for task in result.tasks)
