@@ -55,7 +55,7 @@ class PlannerAgent(BaseAgent):
         state.tasks = output.tasks
         state.plan = [task.objective for task in output.tasks]
         state.planning_summary = output.planning_summary
-        state.status = "completed"
+        state.status = "researching"
 
         self.logger.info(
             "planner_completed",

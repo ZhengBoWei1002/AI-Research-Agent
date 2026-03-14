@@ -135,6 +135,18 @@ The current workflow is intentionally bounded:
 - `Planner` decomposes the task into multiple `ResearchTask` items
 - no `Researcher` execution is implemented in this round
 
+## Research Milestone Workflow
+
+This round extends the runnable workflow to:
+
+```mermaid
+flowchart LR
+    A([START]) --> B[Supervisor]
+    B --> C[Planner]
+    C --> D[Researcher]
+    D --> E([END])
+```
+
 ## Tech Stack
 
 - Python 3.12
@@ -172,7 +184,10 @@ ai-research-agent/
 │       │   │   ├── agent.py
 │       │   │   ├── prompt.py
 │       │   │   └── state.py
-│       │   ├── researcher.py
+│       │   ├── researcher/
+│       │   │   ├── agent.py
+│       │   │   ├── prompt.py
+│       │   │   └── state.py
 │       │   ├── reviewer.py
 │       │   ├── supervisor/
 │       │   │   ├── agent.py
@@ -197,9 +212,17 @@ ai-research-agent/
 │       │       └── chroma.py
 │       ├── schemas/
 │       │   └── system.py
+│       ├── tools/
+│       │   ├── arxiv.py
+│       │   ├── base.py
+│       │   ├── duckduckgo.py
+│       │   ├── github_search.py
+│       │   ├── registry.py
+│       │   └── semantic_scholar.py
 │       └── app.py
 ├── tests/
 │   ├── agents/
+│   ├── tools/
 │   └── graph/
 ├── .env.example
 ├── .gitignore
@@ -267,8 +290,38 @@ logging for observability platforms.
 - `Planner` consumes the normalized task prepared by `Supervisor`
 - it generates deterministic typed `ResearchTask` objects
 - it writes both `tasks` and a string `plan` projection into shared state
-- it marks the workflow as `completed` for the current milestone
-- it deliberately stops before any research execution logic
+- it marks the workflow as `researching` for the current milestone
+- it hands structured tasks to `Researcher`
+
+## Researcher Design
+
+- `Researcher` consumes planned `ResearchTask` objects
+- it automatically selects tools based on the task objective
+- it normalizes returned results into typed `Evidence` items
+- it stores tool invocation traces in `tool_calls`
+- it leaves room for future Browser, PDF Reader, and MCP integration
+
+## Tool Calling
+
+- `Researcher` does not call tool implementations directly
+- it delegates tool selection and execution to `ToolRegistry`
+- each tool returns a normalized `ToolResult` structure
+- current tool support includes `Arxiv`, `Semantic Scholar`, `DuckDuckGo`, and `GitHub Search`
+- future extension slots are reserved for `Browser`, `PDF Reader`, and `MCP`
+
+## Tool Architecture
+
+```mermaid
+flowchart TD
+    A[Researcher Agent] --> B[ToolRegistry]
+    B --> C[Arxiv Tool]
+    B --> D[Semantic Scholar Tool]
+    B --> E[DuckDuckGo Tool]
+    B --> F[GitHub Search Tool]
+    B -. future .-> G[Browser Tool]
+    B -. future .-> H[PDF Reader Tool]
+    B -. future .-> I[MCP Tool]
+```
 
 ## Local Development
 
@@ -320,7 +373,8 @@ The current runnable scope is:
 - API startup and health check
 - `Supervisor` node execution
 - `Planner` node execution
-- `START → Supervisor → Planner → END` workflow invocation
+- `Researcher` node execution
+- `START → Supervisor → Planner → Researcher → END` workflow invocation
 
 ## Docker
 
@@ -388,6 +442,39 @@ Example workflow output:
 
 The real runtime output currently contains three planned tasks. The example is
 shortened here for readability.
+
+## Researcher Usage Example
+
+Run the research workflow:
+
+```bash
+python -c "from ai_research_agent.graph.workflow import run_research_workflow; result = run_research_workflow('Find papers and GitHub repositories for multi-agent research systems'); print(result.model_dump_json(indent=2))"
+```
+
+Example output fragment:
+
+```json
+{
+  "tool_calls": [
+    {
+      "tool_name": "duckduckgo",
+      "query": "Research benchmark papers and code implementations for multi-agent systems",
+      "success": true,
+      "result_count": 1
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "task-1-duckduckgo-1",
+      "task_id": "task-1",
+      "source": "duckduckgo",
+      "title": "DuckDuckGo web results for Research benchmark papers and code implementations for multi-agent systems",
+      "snippet": "General web discovery result related to Research benchmark papers and code implementations for multi-agent systems.",
+      "url": "https://duckduckgo.com/"
+    }
+  ]
+}
+```
 
 ## Future Development Plan
 
