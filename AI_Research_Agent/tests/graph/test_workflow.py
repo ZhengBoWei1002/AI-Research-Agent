@@ -21,3 +21,8 @@ def test_run_research_workflow_returns_planned_tasks() -> None:
     assert len(result.evidence) >= 3
     assert len(result.tool_calls) >= 3
     assert "Researcher aggregated" in result.researcher_summary
+    assert result.review_decision == "approve"
+    assert result.reflection_count >= 1
+    assert "Reviewer" in result.transition_history
+    assert "Writer" in result.transition_history
+    assert result.draft_report

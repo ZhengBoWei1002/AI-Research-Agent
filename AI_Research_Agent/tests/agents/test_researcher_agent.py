@@ -22,7 +22,7 @@ def test_researcher_agent_collects_evidence_and_tool_calls() -> None:
 
     result = agent.run(state)
 
-    assert result.status == "completed"
+    assert result.status == "reviewing"
     assert len(result.evidence) >= 2
     assert len(result.tool_calls) >= 2
     assert all(task.status == "researched" for task in result.tasks)
